@@ -1,8 +1,8 @@
-import { configureStore } from '@reduxjs/toolkit';
-import counterReducer from '../features/counter/counterSlice';
+import { configureStore } from '@reduxjs/toolkit'
+import bondsReducer from 'features/bonds/bondsSlice'
 
 export default configureStore({
   reducer: {
-    counter: counterReducer,
+    bonds: bondsReducer,
   },
 });
