@@ -1,4 +1,7 @@
-import React from 'react'
+import React, {useEffect} from 'react'
+
+import debounce from 'lodash/debounce'
+
 import { makeStyles } from '@material-ui/core/styles'
 import Button from '@material-ui/core/Button'
 import InputLabel from '@material-ui/core/InputLabel'
@@ -20,6 +23,7 @@ import {
   selectBondTypeId,
   selectChartIntervalId,
   selectIsLoading,
+  selectIsLoaded,
 } from '../bondsSlice'
 
 const useStyles = makeStyles((theme) => ({
@@ -38,14 +42,26 @@ function Controls(){
   const bondTypeId = useSelector(selectBondTypeId)
   const chartIntervalId = useSelector(selectChartIntervalId)
   const isLoading = useSelector(selectIsLoading)
+  const isLoaded = useSelector(selectIsLoaded)
+
+  useEffect(() => {
+    if(!isLoaded){
+      handleFetch()
+    }
+  }, [isLoaded])
+
+  const debounceFetch = debounce(() => {
+    handleFetch()
+  }, 500)
 
   const handleFetch = () => {
-    dispatch(fetchBonds({ bondTypeId, chartIntervalId }))
+    dispatch(fetchBonds())
   }
 
   const handleInterval = (event, value) => {
     if(value){
       dispatch(setChartIntervalId(value))
+      debounceFetch()
     }
   }
 
@@ -53,6 +69,7 @@ function Controls(){
     const value = event.target.value
     if(value){
       dispatch(setBondTypeId(event.target.value))
+      debounceFetch()
     }
   }
   

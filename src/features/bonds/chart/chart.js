@@ -1,21 +1,29 @@
 import React, { useEffect, useRef } from 'react'
 import * as d3 from 'd3'
-
 import { useSelector } from 'react-redux'
+
 import {
   selectIsLoading,
   selectBonds,
   selectError,
-  selectIsLoaded,
 } from '../bondsSlice'
 
-const ChartLine = ({ chartData }) => {
+
+function Chart(){
   const ref = useRef()
+
+  const data = useSelector(selectBonds)
+  const error = useSelector(selectError)
   const isLoading = useSelector(selectIsLoading)
 
   useEffect(() => {
+    if(!data.length) return
+
+    d3.selectAll(".chartLine")
+      .remove()
+      .exit()
+
     const svg = d3.select(ref.current)
-    let data = chartData
 
     const series = data.columns.slice(1).map(key => data.map(({[key]: value, date}) => ({key, date, value})))
 
@@ -39,10 +47,12 @@ const ChartLine = ({ chartData }) => {
     const z = d3.scaleOrdinal(data.columns.slice(1), d3.schemeCategory10)
 
     const xAxis = g => g
+      .attr("class", "chartLine")
       .attr("transform", `translate(0,${height - margin.bottom})`)
       .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0))
 
     const yAxis = g => g
+      .attr("class", "chartLine")
       .attr("transform", `translate(${margin.left},0)`)
       .call(d3.axisLeft(y))
       .call(g => g.select(".domain").remove())
@@ -64,6 +74,7 @@ const ChartLine = ({ chartData }) => {
       .join("g");
 
     serie.append("path")
+      .attr("class", "chartLine")
       .attr("fill", "none")
       .attr("stroke", d => z(d[0].key))
       .attr("stroke-width", 1.5)
@@ -72,6 +83,7 @@ const ChartLine = ({ chartData }) => {
         .y(d => y(d.value)));
 
     serie.append("g")
+      .attr("class", "chartLine")
       .attr("font-family", "sans-serif")
       .attr("font-size", 10)
       .attr("stroke-linecap", "round")
@@ -93,30 +105,15 @@ const ChartLine = ({ chartData }) => {
       .attr("stroke", "white")
       .attr("stroke-width", 6);
     svg.node()
-  }, [chartData])
-
-  if(isLoading){
-    return <h1>Loading...</h1>
-  }
-
-  return (
-    <svg viewBox="0 0 550 250" ref={ref}/>
-  )
-}
-
-function Chart(){
-  const data = useSelector(selectBonds)
-  const error = useSelector(selectError)
-  const isLoaded = useSelector(selectIsLoaded)
+  }, [data])
 
   return (
     <div>
       <h3>
-        Chart
+        Chart {isLoading && 'loading...'}
       </h3>
-      {isLoaded && (
-        <ChartLine chartData={data} />
-      )}
+      <svg viewBox="0 0 550 250" ref={ref}/>
+
       {error && (
         <div>
           https://app.fakejson.com/q <br />

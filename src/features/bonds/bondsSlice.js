@@ -4,13 +4,12 @@ import orderBy from 'lodash/orderBy'
 import reduce from 'lodash/reduce'
 import get from 'lodash/get'
 
-import { BOND_TYPE_OPTIONS, INTERVAL_OPTIONS, FAKE_DATA } from 'constants/ids'
+import { BOND_TYPE_OPTIONS, INTERVAL_OPTIONS, FAKE_DATA, FAKE_DATA_2 } from 'constants/ids'
 
 export const fetchBonds = createAsyncThunk(
   'bonds/fetchBonds',
-  async ({ chartIntervalId, bondTypeId }) => {
-    console.log('chartIntervalId: ', chartIntervalId)
-    console.log('bondTypeId: ', bondTypeId)
+  async (_, thunkAPI) => {
+    const { bonds } = thunkAPI.getState()
     try {
       const response = await axios.post('https://app.fakejson.com/q', {
         token: 'c1CpibqSrpskDEhV-gY70Q',
@@ -18,7 +17,7 @@ export const fetchBonds = createAsyncThunk(
         data: {
           date: 'date|ISOdate',
           numberFloat: 'numberFloat|80,160|2',
-          _repeat: chartIntervalId
+          _repeat: bonds.chartIntervalId
         }
       })
       return response.data
@@ -36,7 +35,6 @@ const initialState = {
   error: null,
   idLoading: false,
   idLoaded: false,
-  key: 'Bananas',
 }
 
 export const bondsSlice = createSlice({
@@ -51,7 +49,7 @@ export const bondsSlice = createSlice({
     },
   },
   extraReducers: {
-    [fetchBonds.pending]: (state, action) => {
+    [fetchBonds.pending]: state => {
       state.isLoading = true
     },
     [fetchBonds.fulfilled]: (state, action) => {
@@ -60,6 +58,10 @@ export const bondsSlice = createSlice({
       const error = get(action, 'error', null)
       //TODO: Use local FAKE_DATA if we get limit free queries per day on the app.fakejson.com
       let orderedData = FAKE_DATA
+      const chartIntervalId = get(action, 'meta.arg.chartIntervalId')
+      if(chartIntervalId === 4){
+        orderedData = FAKE_DATA_2
+      }
 
       if(action.payload.error){
         state.error = error
@@ -67,8 +69,7 @@ export const bondsSlice = createSlice({
         orderedData = orderBy(action.payload, 'date')
       }
 
-      const bondTypeId = get(action, 'meta.arg.bondTypeId')
-      const key = BOND_TYPE_OPTIONS[bondTypeId].label
+      const key = BOND_TYPE_OPTIONS[state.bondTypeId].label
       const normlzrData = reduce(orderedData, (acc, { date, numberFloat }) => {
         acc.push({
           key,
@@ -80,7 +81,7 @@ export const bondsSlice = createSlice({
       normlzrData.columns = ['date', key]
       state.entities = normlzrData
     },
-    [fetchBonds.rejected]: (state, action) => {
+    [fetchBonds.rejected]: state => {
       state.isLoading = false
     },
   }
